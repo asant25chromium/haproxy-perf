@@ -1,0 +1,58 @@
+name: CI
+
+on: 
+  workflow_dispatch:
+    inputs:
+      ssl_flavour_and_version:
+        description: 'ssl flavour and version'
+        required: true
+        default: 'OPENSSL_VERSION=3.2.0'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: clone
+        run: |
+          git clone https://github.com/haproxy/haproxy
+
+      - name: build ssl
+        run: |
+          cd haproxy
+          ${{ github.event.inputs.ssl_flavour_and_version }} scripts/build-ssl.sh
+
+      - name: build haproxy
+        run: |
+          cd haproxy
+          make all ERR=1 TARGET=linux-glibc CC=gcc USE_OPENSSL=1 SSL_LIB=${HOME}/opt/lib SSL_INC=${HOME}/opt/include ADDLIB="-Wl,-rpath,$HOME/opt/lib/"
+
+      - name: show version
+        run: |
+          cd haproxy
+
+      - name: download h2spec
+        run: |
+          cd haproxy
+          H2SPEC_VERSION=`curl --silent "https://api.github.com/repos/summerwind/h2spec/releases/latest" | jq -r -j '.tag_name'`
+          curl -fsSL https://github.com/summerwind/h2spec/releases/download/${H2SPEC_VERSION}/h2spec_linux_amd64.tar.gz -o h2spec.tar.gz
+          tar xvf h2spec.tar.gz
+          chmod +x h2spec
+
+      - name: record perf
+        run: |
+          cd haproxy
+          sudo perf record -g ./haproxy -f .github/h2spec.config -d  >/dev/null 2>/dev/null &
+          sleep 5
+          ./h2spec -Svtk -h 127.0.0.1 -p 8443
+          sudo killall -SIGINT haproxy
+          sleep 5
+          wget https://phabricator.kde.org/file/download/wjpg6dvpl4hnan54uawb/PHID-FILE-fznujhizsstxg6toixmd/converters_perf2calltree_python3.py
+          perf script -s converters_perf2calltree_python3.py > perf.out
+
+
+
+
+
