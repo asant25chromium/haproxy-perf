@@ -51,7 +51,7 @@ jobs:
           sleep 5
           wget https://phabricator.kde.org/file/download/wjpg6dvpl4hnan54uawb/PHID-FILE-fznujhizsstxg6toixmd/converters_perf2calltree_python3.py
           sudo chmod 666 perf.data
-          perf script -s converters_perf2calltree_python3.py > perf.out
+          sudo perf script -s converters_perf2calltree_python3.py > perf.out
 
 
 
