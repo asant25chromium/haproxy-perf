@@ -50,6 +50,8 @@ jobs:
           sudo killall -SIGINT haproxy
           sleep 5
           wget https://phabricator.kde.org/file/download/wjpg6dvpl4hnan54uawb/PHID-FILE-fznujhizsstxg6toixmd/converters_perf2calltree_python3.py
+          ls -l perf.data
+          file perf.data
           perf script -s converters_perf2calltree_python3.py > perf.out
 
 
